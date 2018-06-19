@@ -34,11 +34,26 @@ namespace VaultMirror
         {
             ChangeStatusMessage("Starting Full Mirror...");
             // cycle through all of the files in the Vault and place them on disk if needed
-            Folder root = Connection.WebServiceManager.DocumentService.GetFolderRoot();
+
+
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            // TESTING TO SEE IF WE CAN SPECIFY PATH
+            // Folder root = Connection.WebServiceManager.DocumentService.GetFolderRoot();
+            // Folder startPath = Connection.WebServiceManager.DocumentService.GetFolderRoot();
+            Folder startPath = Connection.WebServiceManager.DocumentService.GetFolderByPath("$/Numeric Archive/80000");
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
             // cycle through all of the files on disk and make sure that they are in the Vault
             string localPath = OutputFolder;
-            FullMirrorVaultFolder(root, localPath);
+
+
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            // TESTING TO SEE IF WE CAN SPECIFY PATH
+            // FullMirrorVaultFolder(root, localPath);
+            FullMirrorVaultFolder(startPath, localPath);
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
             // smithmat [2-20-2015]:
             //   https://jira.autodesk.com/browse/PDM-3725
@@ -48,7 +63,13 @@ namespace VaultMirror
             //   This fixes the problem on the first run, but on the next run, the _V files are deleted and not re-added because
             //   the code in FullMirroVaultFolder realizes that the files are up to date and doesn't re-download.
             // 
-            FullMirrorLocalFolder(root, localPath);
+
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            // TESTING TO SEE IF WE CAN SPECIFY PATH
+            //FullMirrorLocalFolder(root, localPath);
+            FullMirrorLocalFolder(startPath, localPath);
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         }
 
         private void FullMirrorVaultFolder(Folder folder, string localFolder)
@@ -64,34 +85,39 @@ namespace VaultMirror
             if (folder.Cloaked)
                 return;
 
-            if (!UseWorkingFolder && !Directory.Exists(localFolder))
-                Directory.CreateDirectory(localFolder);
-
-            ADSK.File[] files = Connection.WebServiceManager.DocumentService.GetLatestFilesByFolderId(
-                folder.Id, true);
-            if (files != null)
+            // MY TEST SUB PATH
+            if (folder.FullName.Contains("80000"))
             {
-                foreach (ADSK.File file in files)
+                if (!UseWorkingFolder && !Directory.Exists(localFolder))
+                    Directory.CreateDirectory(localFolder);
+
+                ADSK.File[] files = Connection.WebServiceManager.DocumentService.GetLatestFilesByFolderId(
+                    folder.Id, true);
+                if (files != null)
                 {
-                    ThrowIfCancellationRequested();
-
-                    if (file.Cloaked)
-                        continue;
-
-                    if (UseWorkingFolder)
-                        AddFileToDownload(file, null);
-                    else
+                    foreach (ADSK.File file in files)
                     {
-                        string filePath = Path.Combine(localFolder, file.Name);
-                        if (System.IO.File.Exists(filePath))
+                        ThrowIfCancellationRequested();
+
+                        if (file.Cloaked)
+                            continue;
+
+                        if (UseWorkingFolder)
+                            AddFileToDownload(file, null);
+                        else
                         {
-                            if (file.CreateDate != System.IO.File.GetCreationTime(filePath))
+                            string filePath = Path.Combine(localFolder, file.Name);
+                            if (System.IO.File.Exists(filePath))
+                            {
+                                if (file.CreateDate != System.IO.File.GetCreationTime(filePath))
+                                    AddFileToDownload(file, filePath);
+                            }
+                            else
                                 AddFileToDownload(file, filePath);
                         }
-                        else
-                            AddFileToDownload(file, filePath);
                     }
                 }
+
             }
 
             Folder[] subFolders = Connection.WebServiceManager.DocumentService.GetFoldersByParentId(folder.Id, false);
@@ -105,7 +131,8 @@ namespace VaultMirror
                         FullMirrorVaultFolderRecursive(subFolder, null);
                 }
             }
-        }
+
+         }
 
         private void FullMirrorLocalFolder(Folder folder, string localFolder)
         {

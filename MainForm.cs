@@ -138,7 +138,7 @@ namespace VaultMirror
             groupBox1.Controls.Add(label1);
             groupBox1.Location = new System.Drawing.Point(8, 8);
             groupBox1.Name = "groupBox1";
-            groupBox1.Size = new System.Drawing.Size(392, 144);
+            groupBox1.Size = new System.Drawing.Size(394, 175);
             groupBox1.TabIndex = 0;
             groupBox1.TabStop = false;
             groupBox1.Text = "Settings";
@@ -149,7 +149,7 @@ namespace VaultMirror
             | System.Windows.Forms.AnchorStyles.Right)));
             this.m_mirrorFolderTextBox.Location = new System.Drawing.Point(136, 112);
             this.m_mirrorFolderTextBox.Name = "m_mirrorFolderTextBox";
-            this.m_mirrorFolderTextBox.Size = new System.Drawing.Size(248, 20);
+            this.m_mirrorFolderTextBox.Size = new System.Drawing.Size(250, 20);
             this.m_mirrorFolderTextBox.TabIndex = 12;
             // 
             // m_vaultTextBox
@@ -158,7 +158,7 @@ namespace VaultMirror
             | System.Windows.Forms.AnchorStyles.Right)));
             this.m_vaultTextBox.Location = new System.Drawing.Point(136, 88);
             this.m_vaultTextBox.Name = "m_vaultTextBox";
-            this.m_vaultTextBox.Size = new System.Drawing.Size(248, 20);
+            this.m_vaultTextBox.Size = new System.Drawing.Size(250, 20);
             this.m_vaultTextBox.TabIndex = 11;
             // 
             // m_serverTextBox
@@ -167,7 +167,7 @@ namespace VaultMirror
             | System.Windows.Forms.AnchorStyles.Right)));
             this.m_serverTextBox.Location = new System.Drawing.Point(136, 64);
             this.m_serverTextBox.Name = "m_serverTextBox";
-            this.m_serverTextBox.Size = new System.Drawing.Size(248, 20);
+            this.m_serverTextBox.Size = new System.Drawing.Size(250, 20);
             this.m_serverTextBox.TabIndex = 10;
             // 
             // m_passwordTextBox
@@ -177,7 +177,7 @@ namespace VaultMirror
             this.m_passwordTextBox.Location = new System.Drawing.Point(136, 40);
             this.m_passwordTextBox.Name = "m_passwordTextBox";
             this.m_passwordTextBox.PasswordChar = '*';
-            this.m_passwordTextBox.Size = new System.Drawing.Size(248, 20);
+            this.m_passwordTextBox.Size = new System.Drawing.Size(250, 20);
             this.m_passwordTextBox.TabIndex = 9;
             // 
             // m_usernameTextBox
@@ -186,7 +186,7 @@ namespace VaultMirror
             | System.Windows.Forms.AnchorStyles.Right)));
             this.m_usernameTextBox.Location = new System.Drawing.Point(136, 16);
             this.m_usernameTextBox.Name = "m_usernameTextBox";
-            this.m_usernameTextBox.Size = new System.Drawing.Size(248, 20);
+            this.m_usernameTextBox.Size = new System.Drawing.Size(250, 20);
             this.m_usernameTextBox.TabIndex = 8;
             // 
             // label5
@@ -231,7 +231,7 @@ namespace VaultMirror
             // 
             // m_fullMirrorButton
             // 
-            this.m_fullMirrorButton.Location = new System.Drawing.Point(8, 160);
+            this.m_fullMirrorButton.Location = new System.Drawing.Point(8, 189);
             this.m_fullMirrorButton.Name = "m_fullMirrorButton";
             this.m_fullMirrorButton.Size = new System.Drawing.Size(120, 24);
             this.m_fullMirrorButton.TabIndex = 1;
@@ -240,7 +240,7 @@ namespace VaultMirror
             // 
             // m_partialMirrorButton
             // 
-            this.m_partialMirrorButton.Location = new System.Drawing.Point(144, 160);
+            this.m_partialMirrorButton.Location = new System.Drawing.Point(144, 189);
             this.m_partialMirrorButton.Name = "m_partialMirrorButton";
             this.m_partialMirrorButton.Size = new System.Drawing.Size(120, 24);
             this.m_partialMirrorButton.TabIndex = 2;
@@ -249,7 +249,7 @@ namespace VaultMirror
             // 
             // m_cancelButton
             // 
-            this.m_cancelButton.Location = new System.Drawing.Point(280, 160);
+            this.m_cancelButton.Location = new System.Drawing.Point(280, 189);
             this.m_cancelButton.Name = "m_cancelButton";
             this.m_cancelButton.Size = new System.Drawing.Size(120, 24);
             this.m_cancelButton.TabIndex = 3;
@@ -258,9 +258,9 @@ namespace VaultMirror
             // 
             // m_statusBar
             // 
-            this.m_statusBar.Location = new System.Drawing.Point(0, 196);
+            this.m_statusBar.Location = new System.Drawing.Point(0, 220);
             this.m_statusBar.Name = "m_statusBar";
-            this.m_statusBar.Size = new System.Drawing.Size(408, 16);
+            this.m_statusBar.Size = new System.Drawing.Size(410, 16);
             this.m_statusBar.TabIndex = 4;
             // 
             // m_statusBarTimer
@@ -271,7 +271,7 @@ namespace VaultMirror
             // MainForm
             // 
             this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-            this.ClientSize = new System.Drawing.Size(408, 212);
+            this.ClientSize = new System.Drawing.Size(410, 236);
             this.Controls.Add(this.m_statusBar);
             this.Controls.Add(this.m_cancelButton);
             this.Controls.Add(this.m_partialMirrorButton);
