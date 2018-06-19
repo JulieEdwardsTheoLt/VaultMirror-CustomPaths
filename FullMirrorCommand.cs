@@ -85,7 +85,11 @@ namespace VaultMirror
             if (folder.Cloaked)
                 return;
 
-            // MY TEST SUB PATH
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            // TESTING TO SEE IF WE CAN SPECIFY PATH
+            // MY TEST SUB PATH - Only copy files and folders if in this path...
+            // IF MULTIPLE PATHS - THIS IS WHERE COULD CHECK
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             if (folder.FullName.Contains("80000"))
             {
                 if (!UseWorkingFolder && !Directory.Exists(localFolder))
@@ -101,6 +105,10 @@ namespace VaultMirror
 
                         if (file.Cloaked)
                             continue;
+
+                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        //  CAN DO FILE TYPE TESTING HERE !!
+                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
                         if (UseWorkingFolder)
                             AddFileToDownload(file, null);
