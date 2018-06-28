@@ -8,6 +8,11 @@ THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY
 KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
 IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
 PARTICULAR PURPOSE.
+
+FURTHER EDITS BY JULIE EDWARDS for Archiving of data to specific rules
+This Edit:      28-06-18
+This Version:   0.0.1.1
+This Status:    Development 
 =====================================================================*/
 
 using System;
@@ -89,9 +94,18 @@ namespace VaultMirror
             // TESTING TO SEE IF WE CAN SPECIFY PATH
             // MY TEST SUB PATH - Only copy files and folders if in this path...
             // IF MULTIPLE PATHS - THIS IS WHERE COULD CHECK
+            //
+            // - Can then adjust the output folder according to rules 
+            // based on the filename - in that way the output archive need not match the 
+            // Vault structure leadigng the way for project based
+            // design data
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             if (folder.FullName.Contains("80000"))
             {
+
+                // Build a Target folder here.. not changing the local folder
+                // but based upon it.
+
                 if (!UseWorkingFolder && !Directory.Exists(localFolder))
                     Directory.CreateDirectory(localFolder);
 
