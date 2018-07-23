@@ -120,6 +120,20 @@ namespace VaultMirror
                         if (file.Cloaked)
                             continue;
 
+
+                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        // GET THE TC URL... 
+                        // NOTE: MOve the folder check DOWN so this bit applies to ALL files, then can write it ut to a dafult CSV file...
+                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+                        Uri serverUri = new Uri(Connection.WebServiceManager.InformationService.Url);
+                        string[] ids = Connection.WebServiceManager.KnowledgeVaultService.GetPersistentIds("FILE", new long[] { file.Id }, EntPersistOpt.Latest);
+                        string id = ids[0];
+                        id = id.TrimEnd('=');
+                        string url = string.Format("{0}://{1}/AutodeskTC/{1}/{2}#/Entity/Details?id=m{3}=&itemtype=File",
+                            serverUri.Scheme, serverUri.Host, Connection.Vault, id);
+
+
                         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         //  CAN DO FILE TYPE TESTING HERE !!
                         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
