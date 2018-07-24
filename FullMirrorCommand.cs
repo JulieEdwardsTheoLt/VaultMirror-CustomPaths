@@ -10,7 +10,9 @@ IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
 PARTICULAR PURPOSE.
 
 FURTHER EDITS BY JULIE EDWARDS for Archiving of data to specific rules
-This Edit:      28-06-18
+                                   and for exporting a list of all the 
+                                   TC URLS to a CSV for PDM systems
+This Edit:      24-07-18
 This Version:   0.0.1.1
 This Status:    Development 
 =====================================================================*/
@@ -31,11 +33,15 @@ namespace VaultMirror
     /// </summary>
     sealed class FullMirrorCommand : Command
 	{
+        string m_sSubPathTest;
+
         public FullMirrorCommand(ICommandReporter commandReporeter, string username, string password,
             string server, string vault, string outputFolder, bool useWorkingFolder, bool failOnError, CancellationToken ct, string sSubPathTest)
             : base(commandReporeter, username, password, server, vault, outputFolder, useWorkingFolder, failOnError, ct)
 		{
-		}
+            m_sSubPathTest = sSubPathTest;
+
+        }
 
         public override void Execute_Impl()
         {
@@ -45,9 +51,9 @@ namespace VaultMirror
 
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             // TESTING TO SEE IF WE CAN SPECIFY PATH
-            // Folder root = Connection.WebServiceManager.DocumentService.GetFolderRoot();
-            // Folder startPath = Connection.WebServiceManager.DocumentService.GetFolderRoot();
-            Folder startPath = Connection.WebServiceManager.DocumentService.GetFolderByPath("$/Numeric Archive");
+            Folder root = Connection.WebServiceManager.DocumentService.GetFolderRoot();
+            Folder startPath = Connection.WebServiceManager.DocumentService.GetFolderRoot();
+            // Folder startPath = Connection.WebServiceManager.DocumentService.GetFolderByPath("$/Numeric Archive");
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
@@ -57,8 +63,8 @@ namespace VaultMirror
 
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             // TESTING TO SEE IF WE CAN SPECIFY PATH
-            // FullMirrorVaultFolder(root, localPath);
-            FullMirrorVaultFolder(startPath, localPath, "80000");
+            FullMirrorVaultFolder(root, localPath, m_sSubPathTest);
+            // FullMirrorVaultFolder(startPath, localPath, m_sSubPathTest);
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
@@ -92,13 +98,6 @@ namespace VaultMirror
             if (folder.Cloaked)
                 return;
 
-
-            // Build a Target folder here.. not changing the local folder
-            // but based upon it.
-
-            if (!UseWorkingFolder && !Directory.Exists(localFolder))
-                Directory.CreateDirectory(localFolder);
-
             ADSK.File[] files = Connection.WebServiceManager.DocumentService.GetLatestFilesByFolderId(
                 folder.Id, true);
             if (files != null)
@@ -113,16 +112,23 @@ namespace VaultMirror
 
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     // GET THE TC URL... 
-                    // NOTE: MOve the folder check DOWN so this bit applies to ALL files, then can write it ut to a dafult CSV file...
-                    // The TC link is here so we export the link to all the files.
+                    // Is it a file we want the URL of?
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+
                     string sFilename = file.Name;
-                    string sExt = sFilename.Substring(sFilename.Length - 3, 3);
+                    int nDot = sFilename.IndexOf(@".");
+
+                    string sExt = sFilename.Substring(nDot +1, sFilename.Length - (nDot +1));
                     sExt = sExt.ToUpper();
 
-                    if (sExt == @"PDF" || sExt == @"DWF")
+                    if (sExt == @"PDF" || sExt == @"DWF" || sExt == @"DWFX" || sExt == @"XLS" || sExt == @"XLSX")
                     {
+                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        // Is a published document so ....
+                        // The TC link is here so we export the link to all the files.
+                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
                         Uri serverUri = new Uri(Connection.WebServiceManager.InformationService.Url);
                         string[] ids = Connection.WebServiceManager.KnowledgeVaultService.GetPersistentIds("FILE", new long[] { file.Id }, EntPersistOpt.Latest);
                         string id = ids[0];
@@ -130,20 +136,29 @@ namespace VaultMirror
                         string url = string.Format("{0}://{1}/AutodeskTC/{1}/{2}#/Entity/Details?id=m{3}=&itemtype=File",
                             serverUri.Scheme, serverUri.Host, Connection.Vault, id);
 
+                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         // Convert the filename to a part number
-                        sFilename = sFilename.Substring(0, sFilename.Length - 4);
+                        // Remove the file ext AND and anything after the revision ...
+                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+                        sFilename = sFilename.Substring(0, nDot);
                         sFilename = sFilename.ToLower();
                         if(sFilename.Contains(@"r") && sFilename.Contains(@"-"))
                         {
                             sFilename = sFilename.Substring(0, sFilename.IndexOf(@"r"));
+
+                             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                            // Now write to a file
+                            // NOTE : NEED TO FIX HARD CODED PATH!
+                            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+                            using (System.IO.StreamWriter fileCSV = new System.IO.StreamWriter( @"M:\DocumentURLs.csv", true))
+                            {
+                                fileCSV.WriteLine( sFilename + @"," + url);
+                            }
                         }
 
-                        // Now write to a file
-                        // NOTE : NEED TO FIX HARD CODED PATH!
-                        using (System.IO.StreamWriter fileCSV = new System.IO.StreamWriter( @"M:\DocumentURLs.csv", true))
-                        {
-                            fileCSV.WriteLine( sFilename + @"," + url);
-                        }
+
                     }
 
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -152,12 +167,20 @@ namespace VaultMirror
                     //
                     // - Can then adjust the output folder according to rules 
                     // based on the filename - in that way the output archive need not match the 
-                    // Vault structure leadigng the way for project based
-                    // design data
+                    // Vault structure leading the way for project based design data
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
                     if (folder.FullName.Contains(sSubPathTest))
                     {
+                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        // Build a Target folder here.. not changing the local folder
+                        // but based upon it.
+                        // Building here means only create folders that are to be used
+                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+                        if (!UseWorkingFolder && !Directory.Exists(localFolder))
+                            Directory.CreateDirectory(localFolder);
+
                         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         //  CAN DO FILE TYPE TESTING HERE !!
                         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

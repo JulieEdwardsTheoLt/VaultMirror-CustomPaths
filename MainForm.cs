@@ -8,6 +8,12 @@ THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY
 KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
 IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
 PARTICULAR PURPOSE.
+FURTHER EDITS BY JULIE EDWARDS for Archiving of data to specific rules
+                                   and for exporting a list of all the 
+                                   TC URLS to a CSV for PDM systems
+This Edit:      24-07-18
+This Version:   0.0.1.1
+This Status:    Development 
 =====================================================================*/
 
 using System;
@@ -59,7 +65,7 @@ namespace VaultMirror
         private System.Windows.Forms.Timer m_statusBarTimer;
 
         private string m_nextStatusBarMessage = String.Empty;
-
+        private TextBox m_subFolderTextBox;
         private CancellationTokenSource m_cts;
 
 		public MainForm()
@@ -97,12 +103,14 @@ namespace VaultMirror
 		{
             this.components = new System.ComponentModel.Container();
             System.Windows.Forms.GroupBox groupBox1;
+            System.Windows.Forms.Label label6;
             System.Windows.Forms.Label label5;
             System.Windows.Forms.Label label4;
             System.Windows.Forms.Label label3;
             System.Windows.Forms.Label label2;
             System.Windows.Forms.Label label1;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
+            this.m_subFolderTextBox = new System.Windows.Forms.TextBox();
             this.m_mirrorFolderTextBox = new System.Windows.Forms.TextBox();
             this.m_vaultTextBox = new System.Windows.Forms.TextBox();
             this.m_serverTextBox = new System.Windows.Forms.TextBox();
@@ -114,6 +122,7 @@ namespace VaultMirror
             this.m_statusBar = new System.Windows.Forms.StatusBar();
             this.m_statusBarTimer = new System.Windows.Forms.Timer(this.components);
             groupBox1 = new System.Windows.Forms.GroupBox();
+            label6 = new System.Windows.Forms.Label();
             label5 = new System.Windows.Forms.Label();
             label4 = new System.Windows.Forms.Label();
             label3 = new System.Windows.Forms.Label();
@@ -126,6 +135,8 @@ namespace VaultMirror
             // 
             groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            groupBox1.Controls.Add(label6);
+            groupBox1.Controls.Add(this.m_subFolderTextBox);
             groupBox1.Controls.Add(this.m_mirrorFolderTextBox);
             groupBox1.Controls.Add(this.m_vaultTextBox);
             groupBox1.Controls.Add(this.m_serverTextBox);
@@ -143,6 +154,23 @@ namespace VaultMirror
             groupBox1.TabStop = false;
             groupBox1.Text = "Settings";
             // 
+            // label6
+            // 
+            label6.Location = new System.Drawing.Point(8, 142);
+            label6.Name = "label6";
+            label6.Size = new System.Drawing.Size(112, 16);
+            label6.TabIndex = 14;
+            label6.Text = "Mirror Items in Path:";
+            // 
+            // m_subFolderTextBox
+            // 
+            this.m_subFolderTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.m_subFolderTextBox.Location = new System.Drawing.Point(136, 138);
+            this.m_subFolderTextBox.Name = "m_subFolderTextBox";
+            this.m_subFolderTextBox.Size = new System.Drawing.Size(250, 20);
+            this.m_subFolderTextBox.TabIndex = 13;
+            // 
             // m_mirrorFolderTextBox
             // 
             this.m_mirrorFolderTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
@@ -151,7 +179,6 @@ namespace VaultMirror
             this.m_mirrorFolderTextBox.Name = "m_mirrorFolderTextBox";
             this.m_mirrorFolderTextBox.Size = new System.Drawing.Size(250, 20);
             this.m_mirrorFolderTextBox.TabIndex = 12;
-            this.m_mirrorFolderTextBox.TextChanged += new System.EventHandler(this.m_mirrorFolderTextBox_TextChanged);
             // 
             // m_vaultTextBox
             // 
@@ -323,6 +350,7 @@ namespace VaultMirror
                 string vault = null;
                 string logfile = null;
                 string mirrorFolder = null;
+                string sSubPathTest = null;
                 bool useWorkingFolder = false;
                 bool failOnError = true;
 
@@ -399,6 +427,13 @@ namespace VaultMirror
                         else if (String.Compare(args[i], "-?", true) == 0)
                         {
                             PrintUsageAndExit();
+                        }
+                        else if (String.Compare(args[i], "-SF", true) == 0)
+                        {
+                            if (args.Length <= i + 1)
+                                PrintErrorAndExit("no sub folder filter specified");
+
+                            sSubPathTest = args[++i];
                         }
                         else
                         {
@@ -501,7 +536,7 @@ namespace VaultMirror
                             FullMirrorCommand cmd = new FullMirrorCommand(new SilentCommandReporter(),
                                 user, pass, server,
                                 vault, mirrorFolder, 
-                                useWorkingFolder, failOnError, CancellationToken.None, "");
+                                useWorkingFolder, failOnError, CancellationToken.None, sSubPathTest);
                             cmd.Execute();
                             Print("Full Mirror complete", "Success");
                         }
@@ -512,7 +547,7 @@ namespace VaultMirror
                         }
 
                         // save the login information, including the updated sync time
-                        settings.AddLogin(new Login(user, pass, server, vault, mirrorFolder, now));
+                        settings.AddLogin(new Login(user, pass, server, vault, mirrorFolder, now, ""));
                         settings.SaveSettings();
                     }
                     catch (Exception e)
@@ -562,6 +597,7 @@ namespace VaultMirror
                 m_vaultTextBox.Text = login.Vault;
                 m_mirrorFolderTextBox.Text = login.MirrorFolder;
                 m_lastSyncTime = login.LastSyncTime;
+                m_subFolderTextBox.Text = login.SubTestFolder;
             }
         }
 
@@ -569,8 +605,7 @@ namespace VaultMirror
         {
             Settings settings = Settings.LoadSettings();
             settings.AddLogin(new Login(m_usernameTextBox.Text, m_passwordTextBox.Text,
-                m_serverTextBox.Text, m_vaultTextBox.Text, m_mirrorFolderTextBox.Text,
-                m_lastSyncTime));
+                m_serverTextBox.Text, m_vaultTextBox.Text, m_mirrorFolderTextBox.Text, m_lastSyncTime, m_subFolderTextBox.Text));
             settings.SaveSettings();
         }
 
@@ -616,20 +651,21 @@ namespace VaultMirror
         private Task FullMirror()
         {
             string folder = m_mirrorFolderTextBox.Text.Trim();
-            Func<Task> f = () => FullMirrorAsync(this, m_usernameTextBox.Text, m_passwordTextBox.Text, m_serverTextBox.Text, m_vaultTextBox.Text, folder, m_cts.Token);
+            string subTestFolder = m_subFolderTextBox.Text.Trim();
+            Func<Task> f = () => FullMirrorAsync(this, m_usernameTextBox.Text, m_passwordTextBox.Text, m_serverTextBox.Text, m_vaultTextBox.Text, folder, m_cts.Token, subTestFolder);
             return MirrorCommandHelper(f);
         }
 
-        private static Task FullMirrorAsync(ICommandReporter commandReporter, string username, string password, string servername, string vaultname, string folder, CancellationToken ct)
+        private static Task FullMirrorAsync(ICommandReporter commandReporter, string username, string password, string servername, string vaultname, string folder, CancellationToken ct, string subFolderTest)
         {
-            return Task.Run(() => FullMirrorWorkerAsync_(commandReporter, username, password, servername, vaultname, folder, ct), ct);
+            return Task.Run(() => FullMirrorWorkerAsync_(commandReporter, username, password, servername, vaultname, folder, ct, subFolderTest), ct);
         }
 
-        private static void FullMirrorWorkerAsync_(ICommandReporter commandReporter, string username, string password, string servername, string vaultname, string folder, CancellationToken ct)
+        private static void FullMirrorWorkerAsync_(ICommandReporter commandReporter, string username, string password, string servername, string vaultname, string folder, CancellationToken ct, string subFolderTest)
         {
             bool useWorkingFolder = string.IsNullOrEmpty(folder);
             bool failOnError = true;
-            FullMirrorCommand cmd = new FullMirrorCommand(commandReporter, username, password, servername, vaultname, folder, useWorkingFolder, failOnError, ct, "");
+            FullMirrorCommand cmd = new FullMirrorCommand(commandReporter, username, password, servername, vaultname, folder, useWorkingFolder, failOnError, ct, subFolderTest);
             cmd.Execute();
         }
 
@@ -764,10 +800,6 @@ namespace VaultMirror
             MainForm.Log(message);
         }
 
-        private void m_mirrorFolderTextBox_TextChanged(object sender, EventArgs e)
-        {
-
-        }
     }
 
     [Serializable]
@@ -779,9 +811,10 @@ namespace VaultMirror
         public string Vault = null;
         public string MirrorFolder = null;
         public DateTime LastSyncTime = DateTime.MinValue;
+        public string SubTestFolder;
 
         public Login(string username, string password, string server, string vault, 
-            string mirrorFolder, DateTime lastSyncTime)
+            string mirrorFolder, DateTime lastSyncTime, string sSubTestFolder)
         {
             this.Username = username;
             this.Password = password;
@@ -789,6 +822,7 @@ namespace VaultMirror
             this.Vault = vault;
             this.MirrorFolder = mirrorFolder;
             this.LastSyncTime = lastSyncTime;
+            this.SubTestFolder = sSubTestFolder;
         }
     }
 
