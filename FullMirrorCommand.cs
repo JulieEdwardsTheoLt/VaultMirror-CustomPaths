@@ -22,15 +22,17 @@ using Autodesk.Connectivity.WebServices;
 using Autodesk.DataManagement.Client.Framework.Currency;
 using ADSK = Autodesk.Connectivity.WebServices;
 
+
 namespace VaultMirror
 {
-	/// <summary>
-	/// Summary description for FullMirrorCommand.
-	/// </summary>
-	sealed class FullMirrorCommand : Command
+
+    /// <summary>
+    /// Summary description for FullMirrorCommand.
+    /// </summary>
+    sealed class FullMirrorCommand : Command
 	{
         public FullMirrorCommand(ICommandReporter commandReporeter, string username, string password,
-            string server, string vault, string outputFolder, bool useWorkingFolder, bool failOnError, CancellationToken ct)
+            string server, string vault, string outputFolder, bool useWorkingFolder, bool failOnError, CancellationToken ct, string sSubPathTest)
             : base(commandReporeter, username, password, server, vault, outputFolder, useWorkingFolder, failOnError, ct)
 		{
 		}
@@ -45,7 +47,7 @@ namespace VaultMirror
             // TESTING TO SEE IF WE CAN SPECIFY PATH
             // Folder root = Connection.WebServiceManager.DocumentService.GetFolderRoot();
             // Folder startPath = Connection.WebServiceManager.DocumentService.GetFolderRoot();
-            Folder startPath = Connection.WebServiceManager.DocumentService.GetFolderByPath("$/Numeric Archive/80000");
+            Folder startPath = Connection.WebServiceManager.DocumentService.GetFolderByPath("$/Numeric Archive");
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
@@ -56,7 +58,7 @@ namespace VaultMirror
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             // TESTING TO SEE IF WE CAN SPECIFY PATH
             // FullMirrorVaultFolder(root, localPath);
-            FullMirrorVaultFolder(startPath, localPath);
+            FullMirrorVaultFolder(startPath, localPath, "80000");
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
@@ -77,55 +79,50 @@ namespace VaultMirror
 
         }
 
-        private void FullMirrorVaultFolder(Folder folder, string localFolder)
+        private void FullMirrorVaultFolder(Folder folder, string localFolder, string sSubPathTest)
         {
-            FullMirrorVaultFolderRecursive(folder, localFolder);
+            FullMirrorVaultFolderRecursive(folder, localFolder, sSubPathTest);
             DownloadFiles();
         }
 
-        private void FullMirrorVaultFolderRecursive(Folder folder, string localFolder)
+        private void FullMirrorVaultFolderRecursive(Folder folder, string localFolder, string sSubPathTest)
         {
             ThrowIfCancellationRequested();
 
             if (folder.Cloaked)
                 return;
 
-            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            // TESTING TO SEE IF WE CAN SPECIFY PATH
-            // MY TEST SUB PATH - Only copy files and folders if in this path...
-            // IF MULTIPLE PATHS - THIS IS WHERE COULD CHECK
-            //
-            // - Can then adjust the output folder according to rules 
-            // based on the filename - in that way the output archive need not match the 
-            // Vault structure leadigng the way for project based
-            // design data
-            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            if (folder.FullName.Contains("80000"))
+
+            // Build a Target folder here.. not changing the local folder
+            // but based upon it.
+
+            if (!UseWorkingFolder && !Directory.Exists(localFolder))
+                Directory.CreateDirectory(localFolder);
+
+            ADSK.File[] files = Connection.WebServiceManager.DocumentService.GetLatestFilesByFolderId(
+                folder.Id, true);
+            if (files != null)
             {
-
-                // Build a Target folder here.. not changing the local folder
-                // but based upon it.
-
-                if (!UseWorkingFolder && !Directory.Exists(localFolder))
-                    Directory.CreateDirectory(localFolder);
-
-                ADSK.File[] files = Connection.WebServiceManager.DocumentService.GetLatestFilesByFolderId(
-                    folder.Id, true);
-                if (files != null)
+                foreach (ADSK.File file in files)
                 {
-                    foreach (ADSK.File file in files)
+                    ThrowIfCancellationRequested();
+
+                    if (file.Cloaked)
+                        continue;
+
+
+                    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    // GET THE TC URL... 
+                    // NOTE: MOve the folder check DOWN so this bit applies to ALL files, then can write it ut to a dafult CSV file...
+                    // The TC link is here so we export the link to all the files.
+                    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+                    string sFilename = file.Name;
+                    string sExt = sFilename.Substring(sFilename.Length - 3, 3);
+                    sExt = sExt.ToUpper();
+
+                    if (sExt == @"PDF" || sExt == @"DWF")
                     {
-                        ThrowIfCancellationRequested();
-
-                        if (file.Cloaked)
-                            continue;
-
-
-                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        // GET THE TC URL... 
-                        // NOTE: MOve the folder check DOWN so this bit applies to ALL files, then can write it ut to a dafult CSV file...
-                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
                         Uri serverUri = new Uri(Connection.WebServiceManager.InformationService.Url);
                         string[] ids = Connection.WebServiceManager.KnowledgeVaultService.GetPersistentIds("FILE", new long[] { file.Id }, EntPersistOpt.Latest);
                         string id = ids[0];
@@ -133,7 +130,34 @@ namespace VaultMirror
                         string url = string.Format("{0}://{1}/AutodeskTC/{1}/{2}#/Entity/Details?id=m{3}=&itemtype=File",
                             serverUri.Scheme, serverUri.Host, Connection.Vault, id);
 
+                        // Convert the filename to a part number
+                        sFilename = sFilename.Substring(0, sFilename.Length - 4);
+                        sFilename = sFilename.ToLower();
+                        if(sFilename.Contains(@"r") && sFilename.Contains(@"-"))
+                        {
+                            sFilename = sFilename.Substring(0, sFilename.IndexOf(@"r"));
+                        }
 
+                        // Now write to a file
+                        // NOTE : NEED TO FIX HARD CODED PATH!
+                        using (System.IO.StreamWriter fileCSV = new System.IO.StreamWriter( @"M:\DocumentURLs.csv", true))
+                        {
+                            fileCSV.WriteLine( sFilename + @"," + url);
+                        }
+                    }
+
+                    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    // TESTING WETHER THE FILE IS ONE TO BE MIRRORED HERE
+                    // A SIMPLE TEST ATM - SUB PATH - Only copy files and folders if in this path...
+                    //
+                    // - Can then adjust the output folder according to rules 
+                    // based on the filename - in that way the output archive need not match the 
+                    // Vault structure leadigng the way for project based
+                    // design data
+                    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+                    if (folder.FullName.Contains(sSubPathTest))
+                    {
                         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         //  CAN DO FILE TYPE TESTING HERE !!
                         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -162,9 +186,9 @@ namespace VaultMirror
                 foreach (Folder subFolder in subFolders)
                 {
                     if (!UseWorkingFolder)
-                        FullMirrorVaultFolderRecursive(subFolder, Path.Combine(localFolder, subFolder.Name));
+                        FullMirrorVaultFolderRecursive(subFolder, Path.Combine(localFolder, subFolder.Name), sSubPathTest);
                     else
-                        FullMirrorVaultFolderRecursive(subFolder, null);
+                        FullMirrorVaultFolderRecursive(subFolder, null, sSubPathTest);
                 }
             }
 
@@ -259,3 +283,4 @@ namespace VaultMirror
 
 	}
 }
+

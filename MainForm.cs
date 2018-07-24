@@ -151,6 +151,7 @@ namespace VaultMirror
             this.m_mirrorFolderTextBox.Name = "m_mirrorFolderTextBox";
             this.m_mirrorFolderTextBox.Size = new System.Drawing.Size(250, 20);
             this.m_mirrorFolderTextBox.TabIndex = 12;
+            this.m_mirrorFolderTextBox.TextChanged += new System.EventHandler(this.m_mirrorFolderTextBox_TextChanged);
             // 
             // m_vaultTextBox
             // 
@@ -245,6 +246,7 @@ namespace VaultMirror
             this.m_partialMirrorButton.Size = new System.Drawing.Size(120, 24);
             this.m_partialMirrorButton.TabIndex = 2;
             this.m_partialMirrorButton.Text = "Run Partial Mirror";
+            this.m_partialMirrorButton.Visible = false;
             this.m_partialMirrorButton.Click += new System.EventHandler(this.m_partialMirrorButton_Click);
             // 
             // m_cancelButton
@@ -499,7 +501,7 @@ namespace VaultMirror
                             FullMirrorCommand cmd = new FullMirrorCommand(new SilentCommandReporter(),
                                 user, pass, server,
                                 vault, mirrorFolder, 
-                                useWorkingFolder, failOnError, CancellationToken.None);
+                                useWorkingFolder, failOnError, CancellationToken.None, "");
                             cmd.Execute();
                             Print("Full Mirror complete", "Success");
                         }
@@ -627,7 +629,7 @@ namespace VaultMirror
         {
             bool useWorkingFolder = string.IsNullOrEmpty(folder);
             bool failOnError = true;
-            FullMirrorCommand cmd = new FullMirrorCommand(commandReporter, username, password, servername, vaultname, folder, useWorkingFolder, failOnError, ct);
+            FullMirrorCommand cmd = new FullMirrorCommand(commandReporter, username, password, servername, vaultname, folder, useWorkingFolder, failOnError, ct, "");
             cmd.Execute();
         }
 
@@ -760,6 +762,11 @@ namespace VaultMirror
         void ICommandReporter.Log(string message)
         {
             MainForm.Log(message);
+        }
+
+        private void m_mirrorFolderTextBox_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 
